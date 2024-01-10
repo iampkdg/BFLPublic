@@ -1,0 +1,27 @@
+<apex:page standardController="Contact" showHeader="false" recordSetVar="contactList">
+    <apex:form>
+        <apex:pageBlock title="Contact List" id="contact_list">
+            
+            <apex:pageBlockSection columns="1">
+                <apex:inputField value="{!Contact.LastName}"></apex:inputField>
+                <apex:inputField value="{!Contact.Email}"></apex:inputField>
+            </apex:pageBlockSection>
+            <apex:pageBlockButtons>
+                <apex:commandButton value="Save" action="{!Save}"/>
+                <apex:commandButton value="Cancel" action="{!Cancel}"/>
+            </apex:pageBlockButtons>
+
+            Filter:
+            <apex:selectList value="{! filterID}" size="1">
+                <apex:selectOptions value="{! listViewOptions}"/>
+                <apex:actionSupport event="onchange" reRender="contact_list"/>
+            </apex:selectList>
+            <apex:pageBlockTable value="{!contactList}" var="con">
+                <apex:column value="{!con.LastName}"/>
+                <apex:column value="{!con.Phone}"/>
+                <apex:column value="{!con.Email}"/>
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:form>
+
+</apex:page>

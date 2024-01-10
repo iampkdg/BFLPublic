@@ -1,0 +1,16 @@
+<apex:page standardController="Account" extensions="ContactCreationThroughAccountController">
+    <apex:form >
+        <apex:pageBlock title="Create Contact">
+            <apex:pageBlockSection columns="2">
+                <apex:inputField value="{!newContact.FirstName}" required="true"/>
+                <apex:inputField value="{!newContact.LastName}" required="true"/>
+                <apex:inputField value="{!newContact.Phone}"/>
+                <apex:inputField value="{!newContact.Email}" required="true"/>
+            </apex:pageBlockSection>
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton action="{!saveContact}" value="Save" />
+                <apex:commandButton action="{!cancel}" value="Cancel"/>
+            </apex:pageBlockButtons>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

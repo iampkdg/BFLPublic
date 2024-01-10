@@ -1,0 +1,31 @@
+<apex:page showHeader="false" standardController="Contact" >
+<apex:form >
+  <h1>Welcome to your first VF Page</h1>
+  <h2> Hello {!$User.LastName}</h2>
+  <apex:pageBlock >
+     <!-- End Default Content REMOVE THIS -->
+  Hello this is the contact name {!Contact.LastName} 
+
+  </apex:pageBlock>
+
+  <apex:pageBlock>
+
+  <table border="1">
+    <tr>
+      <td>
+        <p>Please enter the New Contact Name</p>
+        <apex:inputField value="{!Contact.LastName}"/>
+        <apex:commandButton action="{!save}" value="Save New Contact"/>
+      </td>
+    </tr>
+  </table>
+
+  </apex:pageBlock>
+
+
+  <apex:detail />
+  
+  
+ 
+</apex:form>
+</apex:page>

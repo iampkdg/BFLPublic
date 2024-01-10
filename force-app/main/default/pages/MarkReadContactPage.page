@@ -1,0 +1,2 @@
+<apex:page standardController="Contact" recordSetVar="Contacts" extensions="MarkReadContactContoller" showHeader="true" action="{!markAsRead}">
+</apex:page>    

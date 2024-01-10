@@ -1,0 +1,21 @@
+<template>
+    <lightning-card title="Get Details">
+
+        <div class={ratingClass}>Account Rating  </div>
+        <div class={websiteClass}>Name </div>
+        <div class={nameClass}>Website </div>
+
+        <div if:true={showbutton} class="slds-var-m-around_medium">
+            <lightning-button 
+                variant="base"
+                label="Convert Lead" 
+                onclick={handleClick} 
+            ></lightning-button>
+        </div>
+
+
+    </lightning-card>
+    <!-- <div class={nameClass}>{account.Name}</div> -->
+    
+</template>
+ 

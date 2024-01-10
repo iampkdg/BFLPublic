@@ -1,0 +1,26 @@
+<template>
+    <lightning-card title="Check Details for Lead Conversion">
+        <div class="slds-var-m-around_medium">
+            <div class={emailClass}> EMAIL</div>
+            <div class={addressClass}> ADDRESS</div>
+            <div class={websiteClass}> WEBSITE</div>
+            <div class={companyClass}> COMPANY</div>
+            <div class={documentClass}> DOCUMENT UPLOADED</div>
+        </div>
+        <lightning-file-upload
+                    name="fileUploader"
+                    accept={acceptedFormats}
+                    record-id={myRecordId}
+                    onuploadfinished={handleUploadFinished}
+                    >
+        </lightning-file-upload>
+
+        <div if:true={showbutton} class="slds-m-left_x-small">
+                    <lightning-button 
+                        variant="brand-outline"
+                        label="Convert Lead"  
+                        onclick={handleClick}>
+                    </lightning-button>
+        </div>
+    </lightning-card>
+</template>

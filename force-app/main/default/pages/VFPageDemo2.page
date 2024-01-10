@@ -1,0 +1,23 @@
+<apex:page standardController="Contact" showHeader="false">
+    <apex:pageBlock title="Page Block">
+        <apex:pageBlockSection title="Page Block Section">
+            <h1>First Block Header</h1>
+            <p>
+                User First Name {!$User.FirstName}
+            </p>
+            <p>
+                Today's Date {!TODAY()}
+            </p>
+            <p>
+                Current Year {!Year(Today())}
+            </p>
+            <p>
+                {!IF (Contains('Pankaj.BFL','BFL'), 'Yes','No')}
+            </p>
+
+        </apex:pageBlockSection>
+        <apex:pageBlockSection title="Page Block Section">
+            <h1>Second Page Block Header</h1>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+</apex:page>
