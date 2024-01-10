@@ -3,7 +3,7 @@ public class OpportunityNamingTriggerHandler {
     public static void handleBeforeInsert(List<Opportunity> newOpportunities) 
     {
         //Decimal seqNumber = 1;
-            Set<String> monthYearKeys = new Set<String>();
+            Set<String> monthYearKeys = new Set<String>(); 
             for (Opportunity opp : newOpportunities) {
                 Integer year = Date.today().year();
                 String month = Datetime.now().format('MMMM').subString(0,3);
