@@ -91,7 +91,7 @@ public static void updateOpportunities(List<Opportunities> inputValue)
                     newSeqNum= insertNewOpp.Monthly_Sequence_Number__c++;
                     oppObj.Monthly_Sequence_Number__c=insertNewOpp.Monthly_Sequence_Number__c;
                     oppObj.MonthCustom__c= insertNewOpp.MonthCustom__c;
-                    oppObj.Name=year+'-'+month+'-'+String.valueOf(oppObj.Monthly_Sequence_Number__c).leftPad(6, '0');
+                    oppObj.Name=year+'-'+monthMap.get(month)+'-'+String.valueOf(oppObj.Monthly_Sequence_Number__c).leftPad(6, '0');
                     System.debug(oppObj.Name);
                     opptoAdd.add(oppObj);
                 
