@@ -29,7 +29,7 @@ public static void updateOpportunities(List<Opportunities> inputValue)
         oppList =[Select CloseDate from Opportunity where Id IN: ids];
         System.debug('Hi++++'+oppList.size());
 		
-		//map
+		//map to get opportunities
 		Map<String, List<opportunity>> monthsVsOppsMap= new Map<String, List<opportunity>>();
 		
 		for(Opportunity opp: [SELECT id, Name, MonthCustom__c,Monthly_Sequence_Number__c FROM Opportunity
