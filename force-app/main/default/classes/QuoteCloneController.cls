@@ -19,12 +19,15 @@ global with sharing class QuoteCloneController {
         {
             excludedObjects.add(exclude.ObjectApiName__c);
         }
+        System.debug('OBJECTS are ---> '+excludedObjects);
 
         // Query the Quote and its related list
         // to insert the related lists will have to query all the related list, even if we do dynamic query we will have to still figure out the required fields in all the related objects that are there for each object. 
         Quote originalQuote = [SELECT Id, Name, OpportunityId, Pricebook2Id, IsSyncing,
-        (Select Id, Product2Id, PricebookEntryId, TotalPrice, Quantity,
-        UnitPrice,Subtotal from QuoteLineItems) 
+        (SELECT Id, Product2Id, PricebookEntryId, TotalPrice, Quantity,
+        UnitPrice,Subtotal FROM QuoteLineItems), 
+        (SELECT Id, Name, IsDeleted FROM QuoteDocuments),
+        (SELECT Id, IsDeleted FROM CombinedAttachments)
         FROM Quote WHERE Id = :quoteId LIMIT 1];
 
         //clone the quote
@@ -50,21 +53,15 @@ global with sharing class QuoteCloneController {
         // Clone and relate the related lists to the cloned Quote dynamically
         for (Schema.ChildRelationship childRel : childRelationships) 
         {
-            if (originalQuote.OpportunityId != null) //check for Original Quote is Sycing
+            if (originalQuote.OpportunityId != null || originalQuote.OpportunityId == null ) //check for Original Quote is Sycing
             {
                 originalQuote.OpportunityId = null; // change the isSyncing to false for the cloned quote
             
 
                 String childObjectName = childRel.getChildSObject().getDescribe().getName();
-                System.debug('Child Obj Name----> '+childObjectName);
+                //System.debug('Child Obj Name----> '+childObjectName);
                 if (excludedObjects.contains(childObjectName)) 
                 {
-                    //continue; // Skip excluded objects
-                    
-                    // if(originalQuote.getSObjects(childRel.getRelationshipName()) == null )
-                    // {
-                    //     continue;
-                    // }
                     String relationshipName = childRel.getRelationshipName() != null ? childRel.getRelationshipName() : String.valueOf(childRel.getField());
                     System.debug('Relationship Name ---> '+relationshipName);
 
@@ -78,6 +75,7 @@ global with sharing class QuoteCloneController {
                     {
                         
                         SObject relatedRecord = relatedList[0];
+
                             SObject clonedRecord = relatedRecord.clone(false, true, false, false);
                             clonedRecord.put(String.valueOf(childRel.getField()), clonedQuote.Id);
                             clonedRecords.add(clonedRecord);
@@ -90,4 +88,3 @@ global with sharing class QuoteCloneController {
         return clonedQuote.Id;
     }
 }
-
