@@ -50,42 +50,42 @@ global with sharing class QuoteCloneController {
         // Clone and relate the related lists to the cloned Quote dynamically
         for (Schema.ChildRelationship childRel : childRelationships) 
         {
-            String childObjectName = childRel.getChildSObject().getDescribe().getName();
-            System.debug('Child Obj Name----> '+childObjectName);
-            if (excludedObjects.contains(childObjectName)) 
+            if (originalQuote.OpportunityId != null) //check for Original Quote is Sycing
             {
-                //continue; // Skip excluded objects
-                
-                // if(originalQuote.getSObjects(childRel.getRelationshipName()) == null )
-                // {
-                //     continue;
-                // }
-                String relationshipName = childRel.getRelationshipName() != null ? childRel.getRelationshipName() : String.valueOf(childRel.getField());
-                System.debug('Relationship Name ---> '+relationshipName);
+                originalQuote.OpportunityId = null; // change the isSyncing to false for the cloned quote
+            
 
-                String fieldName= String.valueOf(childRel.getField());
-                System.debug('Field Name ----> '+fieldName);
-
-                List<SObject> relatedList= relatedRecordsMap.get(relationshipName);
-
-                List<SObject> relatedRecords = originalQuote.getSObjects(relationshipName);
-                if (relatedRecords != null && !relatedRecords.isEmpty()) 
+                String childObjectName = childRel.getChildSObject().getDescribe().getName();
+                System.debug('Child Obj Name----> '+childObjectName);
+                if (excludedObjects.contains(childObjectName)) 
                 {
+                    //continue; // Skip excluded objects
                     
-                    SObject relatedRecord = relatedList[0];
-                        SObject clonedRecord = relatedRecord.clone(false, true, false, false);
-                        clonedRecord.put(String.valueOf(childRel.getField()), clonedQuote.Id);
-                        clonedRecords.add(clonedRecord);
-                        System.debug('Cloned Related Records -----> '+clonedRecords);
+                    // if(originalQuote.getSObjects(childRel.getRelationshipName()) == null )
+                    // {
+                    //     continue;
+                    // }
+                    String relationshipName = childRel.getRelationshipName() != null ? childRel.getRelationshipName() : String.valueOf(childRel.getField());
+                    System.debug('Relationship Name ---> '+relationshipName);
+
+                    String fieldName= String.valueOf(childRel.getField());
+                    System.debug('Field Name ----> '+fieldName);
+
+                    List<SObject> relatedList= relatedRecordsMap.get(relationshipName);
+
+                    List<SObject> relatedRecords = originalQuote.getSObjects(relationshipName);
+                    if (relatedRecords != null && !relatedRecords.isEmpty()) 
+                    {
+                        
+                        SObject relatedRecord = relatedList[0];
+                            SObject clonedRecord = relatedRecord.clone(false, true, false, false);
+                            clonedRecord.put(String.valueOf(childRel.getField()), clonedQuote.Id);
+                            clonedRecords.add(clonedRecord);
+                            System.debug('Cloned Related Records -----> '+clonedRecords);
+                    }
                 }
             }
         }insert clonedRecords;
-
-        // If the original Quote is synced with an Opportunity, unsync it
-        if (originalQuote.OpportunityId != null) {
-            originalQuote.OpportunityId = null;
-            update originalQuote;
-        }
 
         return clonedQuote.Id;
     }
