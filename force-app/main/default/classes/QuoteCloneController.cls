@@ -1,6 +1,9 @@
 global with sharing class QuoteCloneController {
     @AuraEnabled
     public static Id cloneQuoteWithRelatedLists(Id quoteId) {
+
+        List<SObject> clonedRecords = new List<SObject>();
+        
         // Retrieve the Quote and its related lists dynamically
         Map<String, Schema.SObjectType> gd = Schema.getGlobalDescribe();
         Schema.DescribeSObjectResult objResult = gd.get('Quote').getDescribe();
@@ -68,17 +71,15 @@ global with sharing class QuoteCloneController {
                 List<SObject> relatedRecords = originalQuote.getSObjects(relationshipName);
                 if (relatedRecords != null && !relatedRecords.isEmpty()) 
                 {
-                    List<SObject> clonedRecords = new List<SObject>();
+                    
                     SObject relatedRecord = relatedList[0];
                         SObject clonedRecord = relatedRecord.clone(false, true, false, false);
                         clonedRecord.put(String.valueOf(childRel.getField()), clonedQuote.Id);
                         clonedRecords.add(clonedRecord);
                         System.debug('Cloned Related Records -----> '+clonedRecords);
-                    
-                    insert clonedRecords;
                 }
             }
-    }
+        }insert clonedRecords;
 
         // If the original Quote is synced with an Opportunity, unsync it
         if (originalQuote.OpportunityId != null) {
