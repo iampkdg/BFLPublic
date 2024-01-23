@@ -1,17 +1,15 @@
-global with sharing class QuoteCloneController {
+global with sharing class QuoteCloneController 
+{
     @AuraEnabled
-    public static Id cloneQuoteWithRelatedLists(Id quoteId) {
+    public static Id cloneQuoteWithRelatedLists(Id quoteId) 
+    {
 
         List<SObject> clonedRecords = new List<SObject>();
         
-        // Retrieve the Quote and its related lists dynamically
+        // Retrieve the Quote
         Map<String, Schema.SObjectType> gd = Schema.getGlobalDescribe();
         Schema.DescribeSObjectResult objResult = gd.get('Quote').getDescribe();
         System.debug('Quote and its Lists ---> '+objResult);
-
-        // Get the list of child relationships for the Quote object
-        List<Schema.ChildRelationship> childRelationships = objResult.getChildRelationships();
-        System.debug('Child Relationships ---> '+childRelationships);
 
         // Get the list of objects to be excluded from cloning from Custom Metadata Type(now this is working as list that specifies which related obj to clone)
         Set<String> excludedObjects = new Set<String>();
@@ -21,70 +19,87 @@ global with sharing class QuoteCloneController {
         }
         System.debug('OBJECTS are ---> '+excludedObjects);
 
-        // Query the Quote and its related list
-        // to insert the related lists will have to query all the related list, even if we do dynamic query we will have to still figure out the required fields in all the related objects that are there for each object. 
-        Quote originalQuote = [SELECT Id, Name, OpportunityId, Pricebook2Id, IsSyncing,
-        (SELECT Id, Product2Id, PricebookEntryId, TotalPrice, Quantity,
-        UnitPrice,Subtotal FROM QuoteLineItems), 
-        (SELECT Id, Name, IsDeleted FROM QuoteDocuments),
-        (SELECT Id, IsDeleted FROM CombinedAttachments)
-        FROM Quote WHERE Id = :quoteId LIMIT 1];
-
+        // Query the Quote
+        Quote originalQuote = [SELECT Id, Name, OpportunityId, Pricebook2Id, IsSyncing FROM Quote WHERE Id = :quoteId LIMIT 1];
+        
         //clone the quote
         Quote clonedQuote = originalQuote.clone(false, true, false, false);
         clonedQuote.Name = 'Cloned - ' + originalQuote.Name;
-        System.debug('Cloned Quote Name ----> '+clonedQuote);
         insert clonedQuote;
+        System.debug('Cloned Quote Name ----> '+clonedQuote);
 
-
-        //Use map to store the Sobject related rec
-        Map<String, List<SObject>> relatedRecordsMap = new Map<String, List<SObject>>();
-        for (Schema.ChildRelationship childRel : childRelationships) {
-            String childObjectName = childRel.getChildSObject().getDescribe().getName();
-            if (excludedObjects.contains(childObjectName)) {
-                String relationshipName = childRel.getRelationshipName() != null ? childRel.getRelationshipName() : String.valueOf(childRel.getField());
-                List<SObject> relatedRecords = originalQuote.getSObjects(relationshipName);
-                relatedRecordsMap.put(relationshipName, relatedRecords);
-            }
-        }
-
-        
+        // Get the list of child relationships for the Quote object
+        List<Schema.ChildRelationship> childRelationships = objResult.getChildRelationships();
+        System.debug('Child Relationships ---> '+childRelationships);
 
         // Clone and relate the related lists to the cloned Quote dynamically
-        for (Schema.ChildRelationship childRel : childRelationships) 
-        {
-            if (originalQuote.OpportunityId != null || originalQuote.OpportunityId == null ) //check for Original Quote is Sycing
+        for (Schema.ChildRelationship childRelationship : childRelationships) 
             {
-                originalQuote.OpportunityId = null; // change the isSyncing to false for the cloned quote
-            
-
-                String childObjectName = childRel.getChildSObject().getDescribe().getName();
-                //System.debug('Child Obj Name----> '+childObjectName);
-                if (excludedObjects.contains(childObjectName)) 
+                Schema.DescribeSObjectResult childObjectDescribe = childRelationship.getChildSObject().getDescribe();
+               
+                // Check if the child object is one of the specified child objects
+                if (excludedObjects.contains(childObjectDescribe.getName())) 
                 {
-                    String relationshipName = childRel.getRelationshipName() != null ? childRel.getRelationshipName() : String.valueOf(childRel.getField());
-                    System.debug('Relationship Name ---> '+relationshipName);
+                continue;
+                }
+                String relationshipName;
 
-                    String fieldName= String.valueOf(childRel.getField());
-                    System.debug('Field Name ----> '+fieldName);
-
-                    List<SObject> relatedList= relatedRecordsMap.get(relationshipName);
-
-                    List<SObject> relatedRecords = originalQuote.getSObjects(relationshipName);
-                    if (relatedRecords != null && !relatedRecords.isEmpty()) 
+                if(childObjectDescribe.isQueryable() && childObjectDescribe.isCreateable())//filter for if queryable and creatable
+                {
+                    if(childRelationship.getField().getDescribe().isFilterable())//filter for field check if filterable
                     {
-                        
-                        SObject relatedRecord = relatedList[0];
+                    // Get the required fields for the child object
+                    List<String> requiredFields = new List<String>();
+                    for (Schema.SObjectField childField : childObjectDescribe.fields.getMap().values()) 
+                    {
+                        Schema.DescribeFieldResult childFieldDescribe = childField.getDescribe();
+                        if (childFieldDescribe.getType() == Schema.DisplayType.REFERENCE || (!childFieldDescribe.isNillable() && !childFieldDescribe.isDefaultedOnCreate()))
+                        {
+                            requiredFields.add(childFieldDescribe.getName());
+                                
+                        }
+                    }
+                    System.debug('Required Fields -----> '+requiredFields);
 
-                            SObject clonedRecord = relatedRecord.clone(false, true, false, false);
-                            clonedRecord.put(String.valueOf(childRel.getField()), clonedQuote.Id);
-                            clonedRecords.add(clonedRecord);
-                            System.debug('Cloned Related Records -----> '+clonedRecords);
+                    //get the child rec field name for query
+                    relationshipName= String.valueOf(childRelationship.getField());
+                    
+                    //Build the dynamic query
+                    String queryFields = String.join(requiredFields, ',');
+                    String quotesId= originalQuote.Id;
+                    String queryString = 'SELECT ' + queryFields + ' FROM ' + childObjectDescribe.getName() + ' WHERE '+ relationshipName+ ' =: quotesId';
+                    System.debug('The Dynamic Query Is ----> '+queryString);
+                    
+                    
+                    // Clone and relate the child objects to the cloned Quote
+                    List<SObject> relatedObjects = Database.query(queryString);
+                    List<SObject> clonedRelatedObjects = new List<SObject>();
+                    for (SObject relatedObject : relatedObjects) 
+                    {
+                        SObject clonedRelatedObject = relatedObject.clone(false, true, false, false);
+                        clonedRelatedObject.put('QuoteId', clonedQuote.Id);
+                        clonedRelatedObjects.add(clonedRelatedObject);
+                    }
+                    
+                    // Insert the cloned related objects and check for the error
+                    Database.SaveResult[] relatedSrList = Database.insert(clonedRelatedObjects, false);
+                    for (Database.SaveResult relatedSr : relatedSrList) 
+                    {
+                        if (relatedSr.isSuccess()) 
+                        {
+                            System.debug('Cloned ' + childObjectDescribe.getName() + ' Id: ' + relatedSr.getId());
+                        }
+                        else
+                        {
+                            for (Database.Error error : relatedSr.getErrors()) 
+                            {
+                                System.debug('Error creating ' + childObjectDescribe.getName() + ': ' + error.getStatusCode() + ': ' + error.getMessage());
+                            }
+                        }
                     }
                 }
             }
-        }insert clonedRecords;
-
+        }
         return clonedQuote.Id;
     }
 }
